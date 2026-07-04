@@ -2,20 +2,25 @@
 #define ADC_H
 
 #include "system.h"
+#include "gpio.h"
+#include "system.h"
+#include "f103c6t6_regs.h"
 
 typedef enum {
-    ADC_CHANNEL_0 = 0,
+    ADC_CHANNEL_0 = 0,  // PA0...
     ADC_CHANNEL_1,
     ADC_CHANNEL_2,
     ADC_CHANNEL_3,
     ADC_CHANNEL_4,
     ADC_CHANNEL_5,
     ADC_CHANNEL_6,
-    ADC_CHANNEL_7,
-    ADC_CHANNEL_8,
-    ADC_CHANNEL_9
+    ADC_CHANNEL_7,      // PA7
+    ADC_CHANNEL_8,      // PB0
+    ADC_CHANNEL_9       // PB1
 } adc_channel_t;
 
+/* ADC sample register - for STM32F103C6T6 it has only 10 channels
+   Data accurate based on sample cycles count (direct propotional). */
 typedef enum {
     ADC_SAMPLE_1_5_CYCLES = 0,
     ADC_SAMPLE_7_5_CYCLES,
@@ -65,7 +70,5 @@ typedef enum {
 #define LDR_ADC_SAMPLE_TIME      ADC_SAMPLE_239_5_CYCLES
 
 
-system_result_t adc1_init(void);
-system_result_t adc1_read(adc_channel_t channel, ADC_seq_length_t seq_length, uint16_t *adc_value);
-
+system_result_t adc1_read(adc_channel_t channel, gpio_config_req_t adc_gpio, uint16_t *adc_value);
 #endif

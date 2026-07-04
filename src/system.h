@@ -7,9 +7,10 @@
 #include "stdbool.h"
 
 #define CPU_FREQUENCY				BOARD_CPU_FREQUENCY
-#define SYSTICK_HZ					(100)		// 100 for systick interupt per 10 milli-second
+#define SYSTICK_HZ					(100U)		// 100 for systick interupt per 10 milli-second
 
 #define ONE_MHZ_FREQUENCY			(1000000U)
+#define SYSTEM_72MHZ_FREQUENCY		(72000000U)
 
 #define MS_TO_TICKS(ms)				(((ms) + 5) / (1000/100))			
 
@@ -152,12 +153,20 @@ typedef enum {
 
 
 typedef enum {
-	APB1_NOT_DIVISION,
-	APB1_DIVISION_2,
+	APB1_NO_DIVISION,
+	APB1_DIVISION_2 = 4,
 	APB1_DIVISION_4,
 	APB1_DIVISION_8,
 	APB1_DIVISION_16
 }	apb1_clk_ctrl_t;
+
+typedef enum {
+	APB2_NO_DIVISION,
+	APB2_DIVISION_2,
+	APB2_DIVISION_4,
+	APB2_DIVISION_8,
+	APB2_DIVISION_16
+}	apb2_clk_ctrl_t;
 
 typedef enum {
 	HSI_SYSTEM_CLOCK,
@@ -234,6 +243,6 @@ system_result_t APB1_enable_clock(apb1_enable_t enable);
  */
 system_result_t APB2_enable_clock(apb2_enable_t enable);
 
-system_result_t ADC_config_clock();
+system_result_t RCC_adc_config_clock();
 
 #endif

@@ -6,16 +6,20 @@
 #include "led.h"
 #include "timer.h"
 
-extern volatile uint32_t seconds; 
+#define DAYLIGHT_CHECK_TIME_MS			(1500)
 
+extern volatile uint32_t seconds; 
  
 int main(void) {
 	system_result_t result = system_init();  
+	if (result != RESULT_SUCCESS) {
+        led_indicate_state(result);
+    }
 
 	apb2_enable_t enable = GPIOC_CLOCK_ENABLE | GPIOA_CLOCK_ENABLE | AFIO_CLOCK_ENABLE;
 	result = APB2_enable_clock(enable);
 	if (result != RESULT_SUCCESS) {
-        return result;
+        led_indicate_state(result);
     }
 
 	channel_config_req_t channel_req_configs = {
@@ -32,14 +36,18 @@ int main(void) {
 		.pin_config = AFO_OUTPUT_PUSH_PULL,
 		.mode = GPIO_OUTPUT_2MHz
 	};
+
 	result = general_timer_init(TIMER_TIM2, channel_req_configs, gpio_configs);
 	if (result != RESULT_SUCCESS) {
-        return result;
+        led_indicate_state(result);
     }
 
 	while (1) {
 		update_led_from_daylight(TIMER_TIM2, TIMER_CHANNEL_1);
-		delay(MS_TO_TICKS(10000));
+		led_on();
+		delay(MS_TO_TICKS(DAYLIGHT_CHECK_TIME_MS));
+		led_off();
+		delay(MS_TO_TICKS(DAYLIGHT_CHECK_TIME_MS));
 	}
 
 	// never arrives

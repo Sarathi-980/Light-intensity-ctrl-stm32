@@ -29,8 +29,7 @@ void BusFault_handler() {
     while (1);
 }
  
-void UsageFault_handler() {
-    while (1);
+void UsageFault_handler() { 
 }
  
 void SVC_handler() { 

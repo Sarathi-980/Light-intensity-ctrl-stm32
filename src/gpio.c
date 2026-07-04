@@ -42,8 +42,9 @@ system_result_t gpio_configure(gpio_config_req_t cfg_req)
         config_reg = &GPIOx_config_regs(port_reg)->CRH;
         cfg_req.pin -= GPIO_CFG_LOW_REG_MAX_PIN;
     }
-
-    *config_reg = (*config_reg & ~GPIOx_PIN_CFG_MASK(cfg_req.pin)) | (GPIOx_PIN_CFG_SET(((cfg_req.pin_config << 2) | cfg_req.mode), cfg_req.pin));
+ 
+    *config_reg = ((*config_reg & ~GPIOx_PIN_CFG_MASK(cfg_req.pin)) | 
+                        GPIOx_PIN_CFG_SET(((cfg_req.pin_config << 2) | cfg_req.mode), cfg_req.pin));
     return RESULT_SUCCESS;
 }
 

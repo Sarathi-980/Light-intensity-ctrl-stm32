@@ -1,8 +1,6 @@
 #include "system.h"
 #include "system_exceptions.h"
 
-uint32_t system_frequency;
-
 /*  FLASH_ACR is used to enable/disable cpu prefetch, half cycle access
     and control CPU flash access time according to CPU frequency. 
     when boosting CPU frequency we should match the instruction fetch,
@@ -10,31 +8,28 @@ uint32_t system_frequency;
     we fix this by modifying latency wait states and enabling prefetch. 
     prefetch will match the wait cycle.
 */
-static system_result_t flash_interface_set_latency(flash_access_latency_t latency) {
+void flash_interface_set_latency(flash_access_latency_t latency) {
     uint32_t reg_value =  FLASH_ACR_REG;
 
     reg_value &= ~FLASH_ACR_LATENCY_MASK;
     reg_value |= (FLASH_ACR_PREFETCH_BUF_EN_MASK | latency);
     
     FLASH_ACR_REG = reg_value;
-    return RESULT_SUCCESS;
 }
 
 /* The external oscillator frequency is 8 MHz, multiplying by 9 gives 72 MHz.
     PLL shouldn't exceed 72 MHz.
     We should prescale the APB1 frequency because 36 MHz is maximum, we divide 72 MHz by 2.
 */
-static system_result_t rcc_pll_multiply(pll_clk_mul_t multiple, apb1_clk_ctrl_t apb1_clk) { 
+void rcc_pll_multiply(pll_clk_mul_t multiple, apb1_clk_ctrl_t apb1_clk) { 
     uint32_t reg_value = RCC_REGISTERS_ADDR->RCC_CFGR;
     // Enable HSE as a PLL source clock
     reg_value |= RCC_CFG_PLL_SRC_HSE_EN;                
 
     reg_value &= ~(RCC_CFG_PLL_MUL_MASK | RCC_CFG_PPRE1_MASK);
     reg_value |= (multiple << RCC_CFG_PLL_MUL_POS) | (apb1_clk << RCC_CFG_PPRE1_POS);
-    system_frequency = multiple * EXTERNAL_CRYSTAL_FREQ;
  
     RCC_REGISTERS_ADDR->RCC_CFGR = reg_value;
-    return RESULT_SUCCESS;
 }
 
 system_result_t system_clk_init() 
@@ -47,7 +42,8 @@ system_result_t system_clk_init()
     // Set latency before jumping the clock to 72 MHz   
     flash_interface_set_latency(TWO_WAIT_LATENCY);
 
-    // Configure PLL multiplier and APB scaler 
+    // Configure PLL multiplier and APB1 scaler as 36 MHz
+    // we ignore division for apb2 and ahb they will be same as system clock(72 MHz)
     rcc_pll_multiply(PLL_INPUT_MUL_9, APB1_DIVISION_2);
     // Enable PLL clock
     RCC_REGISTERS_ADDR->RCC_CR |= RCC_PLL_CLOCK_EN_MASK;
@@ -90,9 +86,13 @@ system_result_t system_init() {
     return RESULT_SUCCESS;
 }
 
-void delay(uint32_t delay_ms) {
+
+void delay(uint32_t delay_ms)
+{
     uint32_t start = get_systick_count();
-    while ((get_systick_count() - start) < delay_ms) {
+    uint32_t current = get_systick_count();
+    while ((current - start) < delay_ms) {
+        current = get_systick_count();
         __asm volatile ("wfi");
     }
 }
@@ -111,7 +111,7 @@ system_result_t AHB_enable_clock(ahb_enable_t enable) {
         return RESULT_INVALID;
     }
     
-    RCC_REGISTERS_ADDR->RCC_AHBENR = enable;
+    RCC_REGISTERS_ADDR->RCC_AHBENR |= enable;
     return RESULT_SUCCESS;
 }
 
@@ -120,7 +120,7 @@ system_result_t APB1_enable_clock(apb1_enable_t enable) {
         return RESULT_INVALID;
     }
     
-    RCC_REGISTERS_ADDR->RCC_APB1ENR = enable;
+    RCC_REGISTERS_ADDR->RCC_APB1ENR |= enable;
     return RESULT_SUCCESS;
 }
 
@@ -129,11 +129,11 @@ system_result_t APB2_enable_clock(apb2_enable_t enable) {
         return RESULT_INVALID;
     }
     
-    RCC_REGISTERS_ADDR->RCC_APB2ENR = enable;
+    RCC_REGISTERS_ADDR->RCC_APB2ENR |= enable;
     return RESULT_SUCCESS;
 }
 
-system_result_t ADC_config_clock() {
+system_result_t RCC_adc_config_clock() {
     // Enable adc clock peripheral
     apb2_enable_t enable_clk = ADC1_CLOCK_ENABLE;
     system_result_t result = APB2_enable_clock(enable_clk);
@@ -141,9 +141,12 @@ system_result_t ADC_config_clock() {
         return RESULT_INVALID;
     }
 
+    // The ADC input clock is generated from PCLK2 clock divided by prescaler
+    // It must not exceed 14 MHz
     uint32_t reg_value = RCC_REGISTERS_ADDR->RCC_CFGR;
     reg_value &= ~RCC_CFG_ADCPRE_MASK;
     reg_value |= (ADC_SYSCLK_DIV_6 << RCC_CFG_ADCPRE_POS);      // 72 / 6 -> 12 MHz signal to adc
 
+    RCC_REGISTERS_ADDR->RCC_CFGR = reg_value;
     return RESULT_SUCCESS;
 }

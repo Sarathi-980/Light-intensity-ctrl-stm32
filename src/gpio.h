@@ -18,7 +18,6 @@ typedef struct
 
 #define GPIOx_config_regs(gpio_base)      ((GPIOx_typedef *) (gpio_base))
 
-
 /*
     each pin in both CRL and CRH registers (low [0 to 7] high [8 to 15]) has configuraion bits cnf[1:0] to configure corresponding I/O port. 
     each pin in both CRL and CRH register (low [0 to 7] high [8 to 15]) has mode bits mode[1:0] to select input and output mode.

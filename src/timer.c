@@ -1,7 +1,5 @@
 #include "timer.h" 
 
-extern uint32_t system_frequency;
-
 static const uint32_t timer_base_address_table[TIMER_COUNT] = {
     [TIMER_TIM1]  = TIMER1_BASE_ADDRESS,
     [TIMER_TIM2]  = TIMER2_BASE_ADDRESS,
@@ -193,7 +191,7 @@ system_result_t general_timer_init(timer_id_t id, channel_config_req_t timer_con
         Timer frequency = timer clock / ((Prescaler + 1) * (Auto reload + 1))
         If timer clock is 72 MHz and PSC is 71 then timer counter clock is 1 MHz.
     */
-    timer->TIMx_PSC = (system_frequency / ONE_MHZ_FREQUENCY) - 1U;
+    timer->TIMx_PSC = (SYSTEM_72MHZ_FREQUENCY / ONE_MHZ_FREQUENCY) - 1U;
     timer->TIMx_ARR = TIMER_INIT_AUTO_RELOAD_VAL;
     
     // Enable auto-reload enable
